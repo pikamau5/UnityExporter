@@ -1,7 +1,8 @@
 ﻿/*
 Based on ObjExporter.cs and http://answers.unity3d.com/questions/317951/how-to-use-editorobjexporter-obj-saving-script-fro.html.
 
-insert more instructions
+Usage:
+	Export selected objects + textures to a folder, drag & drop exported file to 3ds max and keep correct material setups etc.
 
 Export multiple meshes to one obj! (see original script)
 
