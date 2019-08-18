@@ -42,7 +42,6 @@ struct ObjMaterial
 	public Texture2D texEmission;
 
 	public string materialName;
-
 }
 
 public class ObjMatExporter : ScriptableObject
@@ -50,9 +49,7 @@ public class ObjMatExporter : ScriptableObject
 	private static int vertexOffset = 0;
 	private static int normalOffset = 0;
 	private static int uvOffset = 0;
-
 	public static int objectCounter = 0;
-
 	public static bool mainNull = false;
 	public static bool occlusionNull = false;
 	public static bool metalGlossNull = false;
@@ -87,8 +84,6 @@ public class ObjMatExporter : ScriptableObject
 		Material[] mats = mf.GetComponent<Renderer>().sharedMaterials;
 		
 		StringBuilder sb = new StringBuilder();
-		
-		//sb.Append("g ").Append(mf.name).Append("\n");
 
 		// Ignore meshes with <4 vertices
 		if (m == null || m.vertices == null || m.vertexCount < 4) { // ???vertex index error???
@@ -99,7 +94,6 @@ public class ObjMatExporter : ScriptableObject
 		foreach(Vector3 lv in m.vertices) 
 		{
 			Vector3 wv = mf.transform.TransformPoint(lv);
-			
 			//Invert x-component since we're in
 			//a different coordinate system than "everyone" is "used to".
 			sb.Append(string.Format("v {0} {1} {2}\n",-wv.x,wv.y,wv.z));
@@ -109,7 +103,6 @@ public class ObjMatExporter : ScriptableObject
 		foreach(Vector3 lv in m.normals) 
 		{
 			Vector3 wv = mf.transform.TransformDirection(lv);
-			
 			sb.Append(string.Format("vn {0} {1} {2}\n",-wv.x,wv.y,wv.z));
 		}
 		sb.Append("\n");
@@ -132,7 +125,6 @@ public class ObjMatExporter : ScriptableObject
 				objMaterial.name = mats[material].name;
 				
 				if (mats[material].mainTexture && mats[material].shader.name == "Standard") {
-					
 					// getting texture maps from shader
 					objMaterial.textureName = EditorUtility.GetAssetPath(mats[material].mainTexture);
 					objMaterial.textureNameBump = EditorUtility.GetAssetPath(mats[material].GetTexture("_BumpMap"));
@@ -165,15 +157,6 @@ public class ObjMatExporter : ScriptableObject
 					objMaterial.materialName = mats[material].name;
 
 					objMaterial.textureNameEmission = EditorUtility.GetAssetPath(mats[material].GetTexture("_EmissionMap"));
-
-					/* these are in wrong place
-					// check missing textures (this could be done more efficiently, but the current check didn't work)
-					if (mats[material].GetTexture("_MainTex") == null) { mainNull = true; }else  { mainNull = false; }
-					if (mats[material].GetTexture("_BumpMap") == null) { bumpNull = true; }else  { bumpNull = false; }
-					if (mats[material].GetTexture("_OcclusionMap") == null) { occlusionNull = true; }else  { occlusionNull = false; }
-					if (mats[material].GetTexture("_MetallicGlossMap") == null) { metalGlossNull = true; }else  { metalGlossNull = false; }
-					if (mats[material].GetTexture("_EmissionMap") == null) { emissiveNull = true; }else  { emissiveNull = false; }
-					*/
 				}
 				else {
 					objMaterial.textureName = null;
@@ -213,36 +196,31 @@ public class ObjMatExporter : ScriptableObject
 	private static Dictionary<string, ObjMaterial> PrepareFileWrite()
 	{
 		Clear();
-		
 		return new Dictionary<string, ObjMaterial>();
 	}
-	
+
 	private static void MaterialsToFile(Dictionary<string, ObjMaterial> materialList, string folder, string filename)
 	{
-		//Uncomment brackets to disable mtl export
-		///*
 		using (StreamWriter sw = new StreamWriter(mtlFolder + "/" + filename + ".mtl")) 
 		{
 			foreach( KeyValuePair<string, ObjMaterial> kvp in materialList )
 			{
 				sw.Write("\n");
 				sw.Write("newmtl {0}\n", kvp.Key);
-
-				// Material constants ignored for now...
-				//sw.Write("Ka  0.6 0.6 0.6\n");
-				//sw.Write("Kd  0.6 0.6 0.6\n");
-				//sw.Write("Ks  0.9 0.9 0.9\n");
-				//sw.Write("d  1.0\n");
-				//sw.Write("Ns  0.0\n");
-
+				/* Material constants ignored for now...
+				sw.Write("Ka  0.6 0.6 0.6\n");
+				sw.Write("Kd  0.6 0.6 0.6\n");
+				sw.Write("Ks  0.9 0.9 0.9\n");
+				sw.Write("d  1.0\n");
+				sw.Write("Ns  0.0\n");
+				*/
+				
 				sw.Write("illum 2\n");
-
 				// EXPORTING TEXTURE MAPS & WRITING TO MTL FILE
 				// Albedo texture
 
 				// Creating folder for material
 				System.IO.Directory.CreateDirectory(targetFolder + "/" + flatsFolder + "/" + kvp.Value.materialName);
-
 				string fullPathMaterial = targetFolder + "/" + flatsFolder + "/" + kvp.Value.materialName;
 				string relativePathMaterial = flatsFolder + "/" + kvp.Value.materialName;
 
@@ -383,7 +361,7 @@ public class ObjMatExporter : ScriptableObject
 					sw.Write("map_refl {0}", relativePathRough);
 				}
 
-				/*
+				/* Emission map disabled for now
 				// Emission map
 				if (!emissiveNull)
 				{
@@ -407,7 +385,7 @@ public class ObjMatExporter : ScriptableObject
 				*/
 				sw.Write("\n\n\n");
 			}
-		} //*/
+		} 
 	}
 
 	private static void MeshToFile(MeshFilter mf, string folder, string filename) 
@@ -586,33 +564,7 @@ public class ObjMatExporter : ScriptableObject
 			for (int m = 0; m < meshfilter.Length; m++)
 			{
 				exportedObjects++;
-				/*
-				// adding this number to mesh names to prevent duplicate naming error in max unique
-
-				*/
-				/*'
-				string meshfilterTempName = meshfilter[m].name;
-				foreach (MeshFilter meshObject in meshfilter) {
-					// Finding duplicate names...
-					for (int n = 0; i < meshfilter.Length; i++) {
-						if (meshObject.name == meshfilter [n].name) { // ERROR! its not ignoring its own name!!
-							//...
-							if (EditorUtility.DisplayDialog ("Obj Exporter", "Duplicate name found for object: " + meshObject.name + "\n this might affect object replacing in max", "Select objects", "Automatically fix names (dangerous)")) {
-								Selection.activeObject = null;
-								Selection.activeGameObject = meshObject.gameObject;
-								//return;
-							} else {
-								meshfilter [m].name = meshfilter [m].name + "_" + meshfilterCounter;
-								meshfilterCounter++;
-							}
-						}
-					}
-				}
-				*/
 				MeshToFile((MeshFilter)meshfilter[m], targetFolder, selection[i].name + "_" + i + "_" + m);
-
-				//return name to original in editor
-				//meshfilter[m].name = meshfilterTempName;
 			}
 		}
 		EditorUtility.ClearProgressBar();
