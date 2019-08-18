@@ -21,8 +21,7 @@ using System.Text;
 using System;
 
 
-struct ObjMaterial
-{
+struct ObjMaterial {
 	public string name;
 
 	//albedo name
@@ -44,8 +43,7 @@ struct ObjMaterial
 	public string materialName;
 }
 
-public class ObjMatExporter : ScriptableObject
-{
+public class ObjMatExporter : ScriptableObject {
 	private static int vertexOffset = 0;
 	private static int normalOffset = 0;
 	private static int uvOffset = 0;
@@ -73,8 +71,8 @@ public class ObjMatExporter : ScriptableObject
 	private static string maxFilterStringChar = "#"; // using this for max material name parsing...
 	private static String[] uniqueNameComparison;
 
-	private static string MeshToString(MeshFilter mf, Dictionary<string, ObjMaterial> materialList) 
-	{
+	// Convert mesh data into obj format string
+	private static string MeshToString(MeshFilter mf, Dictionary<string, ObjMaterial> materialList) {
 		if (n != 0) {
 			progressBar = (float)n/(float)nCount;
 		}
@@ -91,8 +89,7 @@ public class ObjMatExporter : ScriptableObject
 			return "";
 		}
 
-		foreach(Vector3 lv in m.vertices) 
-		{
+		foreach(Vector3 lv in m.vertices) {
 			Vector3 wv = mf.transform.TransformPoint(lv);
 			//Invert x-component since we're in
 			//a different coordinate system than "everyone" is "used to".
@@ -100,15 +97,13 @@ public class ObjMatExporter : ScriptableObject
 		}
 		sb.Append("\n");
 		
-		foreach(Vector3 lv in m.normals) 
-		{
+		foreach(Vector3 lv in m.normals) {
 			Vector3 wv = mf.transform.TransformDirection(lv);
 			sb.Append(string.Format("vn {0} {1} {2}\n",-wv.x,wv.y,wv.z));
 		}
 		sb.Append("\n");
 		
-		foreach(Vector3 v in m.uv) 
-		{
+		foreach(Vector3 v in m.uv) {
 			sb.Append(string.Format("vt {0} {1}\n",v.x,v.y));
 		}
 		
@@ -119,8 +114,7 @@ public class ObjMatExporter : ScriptableObject
 			sb.Append("usemap ").Append(mats[material].name).Append("\n");
 			
 			//See if this material is already in the materiallist.
-			try
-			{
+			try {
 				ObjMaterial objMaterial = new ObjMaterial();
 				objMaterial.name = mats[material].name;
 				
@@ -165,14 +159,12 @@ public class ObjMatExporter : ScriptableObject
 				
 				materialList.Add(objMaterial.name, objMaterial);
 			}
-			catch (ArgumentException)
-			{
+			catch (ArgumentException) {
 				//Already in the dictionary
 			}
 			
 			int[] triangles = m.GetTriangles(material);
-			for (int i=0;i<triangles.Length;i+=3) 
-			{
+			for (int i=0;i<triangles.Length;i+=3) {
 				//Because we inverted the x-component, we also needed to alter the triangle winding.
 				sb.Append(string.Format("f {1}/{1}/{1} {0}/{0}/{0} {2}/{2}/{2}\n", 
 				                        triangles[i]+1 + vertexOffset, triangles[i+1]+1 + normalOffset, triangles[i+2]+1 + uvOffset));
@@ -186,22 +178,16 @@ public class ObjMatExporter : ScriptableObject
 		return sb.ToString();
 	}
 	
-	private static void Clear()
-	{
+	// Prepare material for file writing, clear material parameters
+	private static Dictionary<string, ObjMaterial> PrepareFileWrite() {
 		vertexOffset = 0;
 		normalOffset = 0;
 		uvOffset = 0;
-	}
-	
-	private static Dictionary<string, ObjMaterial> PrepareFileWrite()
-	{
-		Clear();
 		return new Dictionary<string, ObjMaterial>();
 	}
 
     // Allow read & write for texture file
-    private static TextureImporter AllowReadWrite(string kvpvalue)
-    {
+    private static TextureImporter AllowReadWrite(string kvpvalue) {
         TextureImporter textureImporter = AssetImporter.GetAtPath(kvpvalue) as TextureImporter;
         textureImporter.isReadable = true;
         TextureImporterPlatformSettings settings = textureImporter.GetDefaultPlatformTextureSettings();
@@ -210,12 +196,10 @@ public class ObjMatExporter : ScriptableObject
         return textureImporter;
     }
 
-	private static void MaterialsToFile(Dictionary<string, ObjMaterial> materialList, string folder, string filename)
-	{
-		using (StreamWriter sw = new StreamWriter(mtlFolder + "/" + filename + ".mtl")) 
-		{
-			foreach( KeyValuePair<string, ObjMaterial> kvp in materialList )
-			{
+	// write texture + mtl files
+	private static void MaterialsToFile(Dictionary<string, ObjMaterial> materialList, string folder, string filename) {
+		using (StreamWriter sw = new StreamWriter(mtlFolder + "/" + filename + ".mtl")) {
+			foreach( KeyValuePair<string, ObjMaterial> kvp in materialList ) {
 				sw.Write("\n");
 				sw.Write("newmtl {0}\n", kvp.Key);
 				/* Material constants ignored for now...
@@ -241,8 +225,7 @@ public class ObjMatExporter : ScriptableObject
 				if (kvp.Value.textureNameMetalGloss == null || kvp.Value.textureNameMetalGloss == "") { metalGlossNull = true; } else  { metalGlossNull = false; }
 				if (kvp.Value.textureNameOcclusion == null || kvp.Value.textureNameOcclusion == "") { occlusionNull = true; } else  { occlusionNull = false; }
 
-				if (!mainNull) 
-				{
+				if (!mainNull) {
                     TextureImporter textureImporter = AllowReadWrite(kvp.Value.textureName);
                     AssetDatabase.ImportAsset(kvp.Value.textureName);
 
@@ -256,13 +239,11 @@ public class ObjMatExporter : ScriptableObject
 				}
 
 				// Normal texture
-				if (!bumpNull)
-				{
+				if (!bumpNull) {
                     TextureImporter textureImporter = AllowReadWrite(kvp.Value.textureNameBump);
 
                     bool textureWasBump = false;
-                    if (textureImporter.textureType == TextureImporterType.NormalMap)
-                    {
+                    if (textureImporter.textureType == TextureImporterType.NormalMap) {
                         textureWasBump = true;
                         textureImporter.textureType = TextureImporterType.Default;
                     }
@@ -286,8 +267,7 @@ public class ObjMatExporter : ScriptableObject
 				}
 
 				// OcclusionMap
-				if (!occlusionNull)
-				{
+				if (!occlusionNull) {
                     TextureImporter textureImporter = AllowReadWrite(kvp.Value.textureNameOcclusion);
                     AssetDatabase.ImportAsset(kvp.Value.textureNameOcclusion);
 
@@ -302,8 +282,7 @@ public class ObjMatExporter : ScriptableObject
 				}
 
 				// MetalGlossMap
-				if (!metalGlossNull)
-				{
+				if (!metalGlossNull) {
                     TextureImporter textureImporter = AllowReadWrite(kvp.Value.textureNameMetalGloss);
                     AssetDatabase.ImportAsset(kvp.Value.textureNameMetalGloss);
 
@@ -352,8 +331,7 @@ public class ObjMatExporter : ScriptableObject
 
                 /* Emission map disabled for now
 				// Emission map
-				if (!emissiveNull)
-				{
+				if (!emissiveNull) {
                     TextureImporter textureImporter = AllowReadWrite(kvp.Value.textureNameEmission);
                     AssetDatabase.ImportAsset(kvp.Value.textureNameMetalGloss);
 
@@ -372,58 +350,53 @@ public class ObjMatExporter : ScriptableObject
 		} 
 	}
 
-	private static void MeshToFile(MeshFilter mf, string folder, string filename) 
-	{
+	// export single obj
+	private static void MeshToFile(MeshFilter mf, string folder, string filename) {
 		Dictionary<string, ObjMaterial> materialList = PrepareFileWrite();
 		
-		using (StreamWriter sw = new StreamWriter(folder +"/" + filename +  ".obj")) 
-		{
+		using (StreamWriter sw = new StreamWriter(folder +"/" + filename +  ".obj")) {
 			if (mf.GetComponent<Renderer> ().sharedMaterials.Length == 1) {
 				sw.Write ("mtllib ./" + "mtl/" + filename + ".mtl\n");
 				sw.Write (MeshToString (mf, materialList));
-			} else {
+			}
+			else {
 				Debug.Log ("Multisub materials not supported! (" + mf.name + ")");
 			}
 		}	
 		MaterialsToFile(materialList, folder, filename);
 	}
 	
-	private static void MeshesToFile(MeshFilter[] mf, string folder, string filename) 
-	{
+	// export multiple obj
+	private static void MeshesToFile(MeshFilter[] mf, string folder, string filename) {
 		Dictionary<string, ObjMaterial> materialList = PrepareFileWrite();
 		
-		using (StreamWriter sw = new StreamWriter(folder +"/" + filename + ".obj")) 
-		{
+		using (StreamWriter sw = new StreamWriter(folder +"/" + filename + ".obj")) {
 			sw.Write("mtllib ./" + "mtl/" + filename + ".mtl\n");
 			
-			for (int i = 0; i < mf.Length; i++)
-			{
+			for (int i = 0; i < mf.Length; i++) {
 				sw.Write(MeshToString(mf[i], materialList));
 			}
 		}
 		MaterialsToFile(materialList, folder, filename);
 	}
 	
-	private static bool CreateTargetFolder()
-	{
-		try
-		{
+	// Create new folder to write files into
+	private static bool CreateTargetFolder() {
+		try {
 			System.IO.Directory.CreateDirectory(targetFolder);
 			System.IO.Directory.CreateDirectory(targetFolder + "/" + flatsFolder);
 			System.IO.Directory.CreateDirectory(mtlFolder);
 		}
-		catch
-		{
+		catch {
 			EditorUtility.DisplayDialog("Error!", "Failed to create target folder!", "");
 			return false;
 		}
-		
 		return true;
 	}
 
+	// Menu item - export selection to a single file
 	[MenuItem ("Custom/Obj Exporter - Export selection to single obj file")]
-	static void ExportWholeSelectionToSingle()
-	{
+	static void ExportWholeSelectionToSingle() {
 		if (!CreateTargetFolder())
 			return;
 
@@ -434,8 +407,7 @@ public class ObjMatExporter : ScriptableObject
 		nCount = selection.Length;
 		progressBar = 0;
 
-		if (selection.Length == 0)
-		{
+		if (selection.Length == 0) {
 			EditorUtility.DisplayDialog("No source object selected!", "Please select one or more target objects", "");
 			return;
 		}
@@ -447,10 +419,8 @@ public class ObjMatExporter : ScriptableObject
 
 		ArrayList mfList = new ArrayList();
 
-		for (int i = 0; i < selection.Length; i++)
-		{
+		for (int i = 0; i < selection.Length; i++) {
 			uniqueNameComparison = new String[selection.Length];
-
 			//checking for non unique names
 			for (int h = 0; h < selection.Length; h++) {
 				uniqueNameComparison [h] = selection[h].name;
@@ -458,11 +428,9 @@ public class ObjMatExporter : ScriptableObject
 			uniqueNameComparison [i] = null; // ignore own object name
 
 			for (int z = 0; z < uniqueNameComparison.Length; z++) {
-				
 				if (selection [i].name == uniqueNameComparison [z]) {
 					Debug.Log ("Non-unique name found! " + selection[i].name);
-
-					if (EditorUtility.DisplayDialog("Obj Exporter", "Duplicate name found: " + selection[i].name + "\nThis will cause errors.","Cancel export","Fix (Add postfix)")){
+					if (EditorUtility.DisplayDialog("Obj Exporter", "Duplicate name found: " + selection[i].name + "\nThis will cause errors.","Cancel export","Fix (Add postfix)")) {
 						return;
 					}
 
@@ -471,11 +439,8 @@ public class ObjMatExporter : ScriptableObject
 					meshfilterCounter++;
 				}
 			}
-
 			Component[] meshfilter = selection[i].GetComponentsInChildren(typeof(MeshFilter));
-
-			for (int m = 0; m < meshfilter.Length; m++)
-			{
+			for (int m = 0; m < meshfilter.Length; m++) {
 				exportedObjects++;
 				mfList.Add(meshfilter[m]);
 			}
@@ -483,49 +448,40 @@ public class ObjMatExporter : ScriptableObject
 
 		if (exportedObjects > 0) {
 			MeshFilter[] mf = new MeshFilter[mfList.Count];
-
 			for (int i = 0; i < mfList.Count; i++) {
 				mf [i] = (MeshFilter)mfList [i];
 			}
-
 			string filename = EditorSceneManager.GetActiveScene ().name + "_" + exportedObjects;
-
 			int stripIndex = filename.LastIndexOf (Path.PathSeparator);
 
 			if (stripIndex >= 0)
 				filename = filename.Substring (stripIndex + 1).Trim ();
 
-			MeshesToFile (mf, targetFolder, singleFileName + maxFilterStringChar); //...
+			MeshesToFile (mf, targetFolder, singleFileName + maxFilterStringChar); //..
 
-
-			if (EditorUtility.DisplayDialog ("Obj Exporter", "Exported " + exportedObjects + " objects.", "Open Folder in Explorer", "Ok."))
-			{
+			if (EditorUtility.DisplayDialog ("Obj Exporter", "Exported " + exportedObjects + " objects.", "Open Folder in Explorer", "Ok.")) {
 				// opening folder in explorer
 				explorerPath = Application.dataPath + "/" + targetFolder; 
 				explorerPath = explorerPath.Replace (@"/" + "Assets", ""); // Explorer is weird
 				explorerPath = explorerPath.Replace (@"/", @"\");   // explorer doesn't like front slashes
 
-				if (Directory.Exists (explorerPath))
-				{
+				if (Directory.Exists (explorerPath)) {
 					System.Diagnostics.Process.Start ("explorer.exe", explorerPath);
 				}
-				else
-				{
+				else {
 					Debug.Log ("directory " + explorerPath + "  not found!");
 				}
 			}
 		}
-		else
-		{
+		else {
 			EditorUtility.DisplayDialog ("Objects not exported", "Make sure at least some of your selected objects have mesh filters!", "");
 		}
 		EditorUtility.ClearProgressBar();
 	}
 
-	// main
-	[MenuItem ("Custom/(obsolete) Obj Exporter - Export selection to separate obj files")]
-	static void ExportSelectionToSeparate()
-	{
+	// Menu item - export selection to separate files
+	[MenuItem ("Custom/Obj Exporter - Export selection to separate obj files")]
+	static void ExportSelectionToSeparate() {
 		if (!CreateTargetFolder())
 			return;
 		
@@ -533,8 +489,7 @@ public class ObjMatExporter : ScriptableObject
 		n = 0; // progressbar object counter
 		nCount = selection.Length;
 		progressBar = 0;
-		if (selection.Length == 0)
-		{
+		if (selection.Length == 0) {
 			EditorUtility.DisplayDialog("No source object selected!", "Please select one or more target objects", "");
 			return;
 		}
@@ -542,11 +497,9 @@ public class ObjMatExporter : ScriptableObject
 		// adding this number to mesh names to prevent duplicate naming error in max
 		int meshfilterCounter = 0;
 
-		for (int i = 0; i < selection.Length; i++)
-		{
+		for (int i = 0; i < selection.Length; i++) {
 			Component[] meshfilter = selection[i].GetComponentsInChildren(typeof(MeshFilter));
-			for (int m = 0; m < meshfilter.Length; m++)
-			{
+			for (int m = 0; m < meshfilter.Length; m++)	{
 				exportedObjects++;
 				MeshToFile((MeshFilter)meshfilter[m], targetFolder, selection[i].name + "_" + i + "_" + m);
 			}
@@ -561,10 +514,12 @@ public class ObjMatExporter : ScriptableObject
 				if (Directory.Exists(explorerPath)) {
 					System.Diagnostics.Process.Start("explorer.exe", explorerPath);
 				}
-				else {Debug.Log("directory " +explorerPath+ "  not found!");
+				else {
+					Debug.Log("directory " +explorerPath+ "  not found!");
 				}
 			}
-		} else {
+		}
+		else {
 			EditorUtility.DisplayDialog ("Objects not exported", "Make sure at least some of your selected objects have mesh filters!", "");
 		}
 	}
