@@ -199,6 +199,17 @@ public class ObjMatExporter : ScriptableObject
 		return new Dictionary<string, ObjMaterial>();
 	}
 
+    // Allow read & write for texture file
+    private static TextureImporter AllowReadWrite(string kvpvalue)
+    {
+        TextureImporter textureImporter = AssetImporter.GetAtPath(kvpvalue) as TextureImporter;
+        textureImporter.isReadable = true;
+        TextureImporterPlatformSettings settings = textureImporter.GetDefaultPlatformTextureSettings();
+        settings.format = TextureImporterFormat.RGBA32;
+        textureImporter.SetPlatformTextureSettings(settings);
+        return textureImporter;
+    }
+
 	private static void MaterialsToFile(Dictionary<string, ObjMaterial> materialList, string folder, string filename)
 	{
 		using (StreamWriter sw = new StreamWriter(mtlFolder + "/" + filename + ".mtl")) 
@@ -216,34 +227,26 @@ public class ObjMatExporter : ScriptableObject
 				*/
 				
 				sw.Write("illum 2\n");
-				// EXPORTING TEXTURE MAPS & WRITING TO MTL FILE
-				// Albedo texture
 
+				// EXPORTING TEXTURE MAPS & WRITING TO MTL FILE
 				// Creating folder for material
 				System.IO.Directory.CreateDirectory(targetFolder + "/" + flatsFolder + "/" + kvp.Value.materialName);
 				string fullPathMaterial = targetFolder + "/" + flatsFolder + "/" + kvp.Value.materialName;
 				string relativePathMaterial = flatsFolder + "/" + kvp.Value.materialName;
 
 				// get missing textures for each object
-				if (kvp.Value.textureName == null || kvp.Value.textureName == "") { mainNull = true; }else  { mainNull = false; }
-				if (kvp.Value.textureNameBump == null || kvp.Value.textureNameBump == "") { bumpNull = true; }else  { bumpNull = false; }
-				if (kvp.Value.textureNameEmission == null || kvp.Value.textureNameEmission == "") { emissiveNull = true; }else  { emissiveNull = false; }
-				if (kvp.Value.textureNameMetalGloss == null || kvp.Value.textureNameMetalGloss == "") { metalGlossNull = true; }else  { metalGlossNull = false; }
-				if (kvp.Value.textureNameOcclusion == null || kvp.Value.textureNameOcclusion == "") { occlusionNull = true; }else  { occlusionNull = false; }
+				if (kvp.Value.textureName == null || kvp.Value.textureName == "") { mainNull = true; } else  { mainNull = false; }
+				if (kvp.Value.textureNameBump == null || kvp.Value.textureNameBump == "") { bumpNull = true; } else  { bumpNull = false; }
+				if (kvp.Value.textureNameEmission == null || kvp.Value.textureNameEmission == "") { emissiveNull = true; } else  { emissiveNull = false; }
+				if (kvp.Value.textureNameMetalGloss == null || kvp.Value.textureNameMetalGloss == "") { metalGlossNull = true; } else  { metalGlossNull = false; }
+				if (kvp.Value.textureNameOcclusion == null || kvp.Value.textureNameOcclusion == "") { occlusionNull = true; } else  { occlusionNull = false; }
 
 				if (!mainNull) 
 				{
-					// Allow Read/Write
-					TextureImporter textureImporter = AssetImporter.GetAtPath (kvp.Value.textureName) as TextureImporter;
-					textureImporter.isReadable = true;
+                    TextureImporter textureImporter = AllowReadWrite(kvp.Value.textureName);
+                    AssetDatabase.ImportAsset(kvp.Value.textureName);
 
-					TextureImporterPlatformSettings settings = textureImporter.GetDefaultPlatformTextureSettings();
-					settings.format = TextureImporterFormat.RGBA32;
-					textureImporter.SetPlatformTextureSettings (settings);
-
-					AssetDatabase.ImportAsset (kvp.Value.textureName);
-					
-					byte[] png0 = kvp.Value.texAlbedo.EncodeToPNG ();
+                    byte[] png0 = kvp.Value.texAlbedo.EncodeToPNG ();
 					string fullPathAlbedo = fullPathMaterial + "/" + kvp.Value.materialName + "_Albedo" +  ".png"; // pls simplify this... 
 					string relativePathAlbedo = relativePathMaterial + "/" + kvp.Value.materialName + "_Albedo" +  ".png";
 
@@ -255,22 +258,18 @@ public class ObjMatExporter : ScriptableObject
 				// Normal texture
 				if (!bumpNull)
 				{
-					// Allow Read/Write
-					TextureImporter textureImporter = AssetImporter.GetAtPath (kvp.Value.textureNameBump) as TextureImporter;
-					textureImporter.isReadable = true;
-					TextureImporterPlatformSettings settings = textureImporter.GetDefaultPlatformTextureSettings();
-					settings.format = TextureImporterFormat.RGBA32;
-					textureImporter.SetPlatformTextureSettings (settings);
-					bool textureWasBump = false;
+                    TextureImporter textureImporter = AllowReadWrite(kvp.Value.textureNameBump);
 
-					if (textureImporter.textureType == TextureImporterType.NormalMap) {
-						textureWasBump = true;
-						textureImporter.textureType = TextureImporterType.Default;
-					}
-						
-					AssetDatabase.ImportAsset (kvp.Value.textureNameBump);
+                    bool textureWasBump = false;
+                    if (textureImporter.textureType == TextureImporterType.NormalMap)
+                    {
+                        textureWasBump = true;
+                        textureImporter.textureType = TextureImporterType.Default;
+                    }
 
-					byte[] pngBump = kvp.Value.texBump.EncodeToPNG ();
+                    AssetDatabase.ImportAsset(kvp.Value.textureNameBump);
+
+                    byte[] pngBump = kvp.Value.texBump.EncodeToPNG ();
 					string fullPathBump = fullPathMaterial + "/" + kvp.Value.materialName + "_Normal" +  ".png"; // pls simplify this... 
 					string relativePathBump = relativePathMaterial + "/" + kvp.Value.materialName + "_Normal" +  ".png";
 
@@ -289,15 +288,10 @@ public class ObjMatExporter : ScriptableObject
 				// OcclusionMap
 				if (!occlusionNull)
 				{
-					// Allow Read/Write
-					TextureImporter textureImporter = AssetImporter.GetAtPath (kvp.Value.textureNameOcclusion) as TextureImporter;
-					textureImporter.isReadable = true;
-					TextureImporterPlatformSettings settings = textureImporter.GetDefaultPlatformTextureSettings();
-					settings.format = TextureImporterFormat.RGBA32;
-					textureImporter.SetPlatformTextureSettings (settings);
-					AssetDatabase.ImportAsset (kvp.Value.textureNameOcclusion);
+                    TextureImporter textureImporter = AllowReadWrite(kvp.Value.textureNameOcclusion);
+                    AssetDatabase.ImportAsset(kvp.Value.textureNameOcclusion);
 
-					byte[] pngOcclusion = kvp.Value.texOcclusion.EncodeToPNG ();
+                    byte[] pngOcclusion = kvp.Value.texOcclusion.EncodeToPNG ();
 					string fullPathOcclusion = fullPathMaterial + "/" + kvp.Value.materialName + "_Occlusion" +  ".png"; // pls simplify this... 
 					string relativePathOcclusion = relativePathMaterial + "/" + kvp.Value.materialName + "_Occlusion" +  ".png";
 
@@ -310,16 +304,11 @@ public class ObjMatExporter : ScriptableObject
 				// MetalGlossMap
 				if (!metalGlossNull)
 				{
-					// Allow Read/Write
-					TextureImporter textureImporter = AssetImporter.GetAtPath (kvp.Value.textureNameMetalGloss) as TextureImporter;
-					textureImporter.isReadable = true;
-					TextureImporterPlatformSettings settings = textureImporter.GetDefaultPlatformTextureSettings();
-					settings.format = TextureImporterFormat.RGBA32;
-					textureImporter.SetPlatformTextureSettings (settings);
-					AssetDatabase.ImportAsset (kvp.Value.textureNameMetalGloss);
+                    TextureImporter textureImporter = AllowReadWrite(kvp.Value.textureNameMetalGloss);
+                    AssetDatabase.ImportAsset(kvp.Value.textureNameMetalGloss);
 
-					//Converting Metalness map, removing alpha
-					Color[] pixelsColor = kvp.Value.tex1.GetPixels();
+                    //Converting Metalness map, removing alpha
+                    Color[] pixelsColor = kvp.Value.tex1.GetPixels();
 					Color[] resultingPixels = new Color[pixelsColor.Length];
 					for (int c=0;c<pixelsColor.Length;c++) {
 						resultingPixels[c] = new Color(pixelsColor[c].r, pixelsColor[c].g, pixelsColor[c].b, 1.0f);
@@ -361,17 +350,12 @@ public class ObjMatExporter : ScriptableObject
 					sw.Write("map_refl {0}", relativePathRough);
 				}
 
-				/* Emission map disabled for now
+                /* Emission map disabled for now
 				// Emission map
 				if (!emissiveNull)
 				{
-					// Allow Read/Write
-					TextureImporter textureImporter = AssetImporter.GetAtPath (kvp.Value.textureNameEmission) as TextureImporter;
-					textureImporter.isReadable = true;
-					TextureImporterPlatformSettings settings = textureImporter.GetDefaultPlatformTextureSettings();
-					settings.format = TextureImporterFormat.RGBA32;
-					textureImporter.SetPlatformTextureSettings (settings);
-					AssetDatabase.ImportAsset (kvp.Value.textureNameEmission);
+                    TextureImporter textureImporter = AllowReadWrite(kvp.Value.textureNameEmission);
+                    AssetDatabase.ImportAsset(kvp.Value.textureNameMetalGloss);
 
 					byte[] pngEmission = kvp.Value.texEmission.EncodeToPNG ();
 					string fullPathEmission = fullPathMaterial + "/" + kvp.Value.materialName + "_Emissive" +  ".png"; // pls simplify this... 
@@ -383,7 +367,7 @@ public class ObjMatExporter : ScriptableObject
 					sw.Write("map_d {0}", relativePathEmission);
 				}
 				*/
-				sw.Write("\n\n\n");
+                sw.Write("\n\n\n");
 			}
 		} 
 	}
@@ -539,7 +523,7 @@ public class ObjMatExporter : ScriptableObject
 	}
 
 	// main
-	[MenuItem ("Custom/(OBSOLETE) Obj Exporter - Export selection to separate obj files")]
+	[MenuItem ("Custom/(obsolete) Obj Exporter - Export selection to separate obj files")]
 	static void ExportSelectionToSeparate()
 	{
 		if (!CreateTargetFolder())
